@@ -15,12 +15,7 @@
                 <p class="subtitle">Βοήθησε τον Οδυσσέα να επιστρέψει στην Ιθάκη!</p>
                 
                 <div class="intro-video">
-                    <div class="video-placeholder">
-                        <div style="font-size: 4em; margin-bottom: 20px;">🎬</div>
-                        <h3>Καλώς ήρθες στην Οδύσσεια!</h3>
-                        <p style="font-size: 1.1em; color: #666; margin: 20px 0;">Ο Οδυσσέας και οι συνοδοί του ξεκίνησαν από τη Τροία με στόχο να επιστρέψουν στην Ιθάκη. Αλλά ο Ποσειδώνας είχε άλλα σχέδια...</p>
-                        <p style="font-size: 1em; color: #999; font-style: italic;">Θα αντιμετωπίσουν κύκλωπες, μάγισσες, φαντάσματα και άλλες δοκιμασίες!</p>
-                    </div>
+                    <canvas id="introCanvas" width="800" height="450" style="border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); width: 100%;"></canvas>
                 </div>
                 
                 <div class="intro-text">
@@ -136,7 +131,7 @@
                     <h4>❓ Ερώτηση: <span id="finalQuestion"></span></h4>
                     <label for="finalAnswer">Η Απάντηση:</label>
                     <input type="text" id="finalAnswer" placeholder="Γράψε την απάντηση εδώ...">
-                    <button class="btn btn-primary" onclick="submitFinalAnswer()">✅ Υ��οβολή</button>
+                    <button class="btn btn-primary" onclick="submitFinalAnswer()">✅ Υποβολή</button>
                 </div>
 
                 <div id="finalResultMessage" class="hidden"></div>
@@ -157,6 +152,7 @@
         </div>
     </div>
 
+    <script src="intro-animation.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
