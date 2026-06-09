@@ -1,18 +1,115 @@
-// Game State
+// Enhanced Game State with Scoring System
 const gameState = {
     currentRoom: 0,
     completedRooms: [],
     collectedClues: [],
+    score: 0,
+    totalQuestions: 0,
+    correctAnswers: 0,
     answeredQuestions: {
         1: [],
         2: [],
         3: [],
         4: [],
         5: []
-    }
+    },
+    leaderboard: JSON.parse(localStorage.getItem('odysseyLeaderboard')) || [],
+    playerName: localStorage.getItem('odysseyPlayerName') || '',
+    difficulty: 'normal'
 };
 
-// Room Data
+// Audio Manager
+class AudioManager {
+    constructor() {
+        this.backgroundMusic = this.createAudio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3');
+        this.backgroundMusic.loop = true;
+        this.backgroundMusic.volume = 0.3;
+    }
+
+    createAudio(src) {
+        const audio = new Audio(src);
+        return audio;
+    }
+
+    playBackground() {
+        if (this.backgroundMusic.paused) {
+            this.backgroundMusic.play().catch(() => {
+                console.log('Audio playback blocked by browser');
+            });
+        }
+    }
+
+    stopBackground() {
+        this.backgroundMusic.pause();
+    }
+
+    playSound(type) {
+        // Simple tone generation without external audio files
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        switch(type) {
+            case 'correct':
+                oscillator.frequency.value = 800;
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+                break;
+            case 'wrong':
+                oscillator.frequency.value = 300;
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+                break;
+            case 'complete':
+                oscillator.frequency.value = 1000;
+                gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 1);
+                break;
+        }
+    }
+}
+
+const audioManager = new AudioManager();
+
+// Scoring System
+class ScoreCalculator {
+    static calculatePoints(isCorrect, questionType, difficulty) {
+        if (!isCorrect) return 0;
+
+        const basePoints = {
+            'trueFalse': 10,
+            'matching': 15,
+            'anagram': 20
+        };
+
+        const multiplier = {
+            'easy': 1,
+            'normal': 1.5,
+            'hard': 2
+        };
+
+        return (basePoints[questionType] || 10) * multiplier[difficulty];
+    }
+
+    static updateLeaderboard(playerName, score) {
+        const leaderboard = gameState.leaderboard;
+        leaderboard.push({ name: playerName, score: score, date: new Date().toLocaleDateString('el-GR') });
+        leaderboard.sort((a, b) => b.score - a.score);
+        gameState.leaderboard = leaderboard.slice(0, 10); // Keep top 10
+        localStorage.setItem('odysseyLeaderboard', JSON.stringify(gameState.leaderboard));
+    }
+}
+
+// Room Data with Enhanced Content
 const roomsData = [
     {
         id: 1,
@@ -53,7 +150,7 @@ const roomsData = [
     {
         id: 2,
         title: "⚡ Δωμάτιο 2: Ο Κύκλωπας Πολύφημος",
-        narration: "Ο Οδυσσέας και οι άνδρες του φτάνουν στο νησί των Κυκλώπων. Ο Πολύφημος, ένας τρομερός κύκλωπας με ένα μόνο μάτι, τους αιχμαλωτίζει και τρώει μερικούς από τους άνδρες του. Ο Οδυσσέας έχει μια ευφυή σχέδιο - του λέει ότι το όνομά του είναι 'Κανείς'. Όταν τυφλώνει τον Κύκλωπα με μια προσγ, ο Κύκλωπας κλαίει 'Ο Κανείς με τυφλώνει!' και οι άλλοι Κύκλωπες νομίζουν ότι τίποτα δεν συμβαίνει.",
+        narration: "Ο Οδυσσέας και οι άνδρες του φτάνουν στο νησί των Κυκλώπων. Ο Πολύφημος, ένας τρομερός κύκλωπας με ένα μόνο μάτι, τους αιχμαλωτίζει και τρώει μερικούς από τους άνδρες του. Ο Οδυσσέας έχει μια ευφυή σχέδιο - του λέει ότι το όνομά του είναι 'Κανείς'. Όταν τυφλώνει τον Κύκλωπα με μια προσχημάτισ, ο Κύκλωπας κλαίει 'Ο Κανείς με τυφλώνει!' και οι άλλοι Κύκλωπες νομίζουν ότι τίποτα δεν συμβαίνει.",
         animation: "cyclopsAttack",
         questions: [
             {
@@ -209,10 +306,56 @@ const finalPuzzle = {
     question: "Πόσα χρόνια κράτησε η περιπέτεια του Οδυσσέα;"
 };
 
+// Localization
+const i18n = {
+    el: {
+        start: '🚀 Αρχίστε το Escape Room!',
+        back: '← Πίσω',
+        narration: '🔊 Ακούστε την Αφήγηση',
+        score: 'Βαθμολογία: ',
+        finalAnswer: 'Η Απάντηση:',
+        submit: '✅ Υποβολή',
+        correct: 'Σωστό!',
+        wrong: 'Λάθος!',
+        playerName: 'Όνομα Παίκτη:',
+        difficulty: 'Δυσκολία:',
+        music: '🔊 Μουσική',
+        leaderboard: '🏆 Κατάταξη',
+        language: '🌍 Γλώσσα'
+    },
+    en: {
+        start: '🚀 Start Escape Room!',
+        back: '← Back',
+        narration: '🔊 Listen to Narration',
+        score: 'Score: ',
+        finalAnswer: 'Your Answer:',
+        submit: '✅ Submit',
+        correct: 'Correct!',
+        wrong: 'Wrong!',
+        playerName: 'Player Name:',
+        difficulty: 'Difficulty:',
+        music: '🔊 Music',
+        leaderboard: '🏆 Leaderboard',
+        language: '🌍 Language'
+    }
+};
+
+let currentLanguage = localStorage.getItem('odysseyLanguage') || 'el';
+
+function t(key) {
+    return i18n[currentLanguage][key] || i18n['el'][key];
+}
+
 // Start Game
 function startEscapeRoom() {
-    hideSection("introSection");
-    showSection("roomSelectionSection");
+    const playerName = prompt('Εισάγετε το όνομά σας:');
+    if (playerName) {
+        gameState.playerName = playerName;
+        localStorage.setItem('odysseyPlayerName', playerName);
+        audioManager.playBackground();
+        hideSection("introSection");
+        showSection("roomSelectionSection");
+    }
 }
 
 // Enter Room
@@ -236,7 +379,7 @@ function enterRoom(roomNumber) {
     updateProgress();
 }
 
-// Draw Animations
+// Draw Animations (same as before)
 function drawAnimation(type) {
     const svg = document.getElementById("animationSVG");
     svg.innerHTML = "";
@@ -261,7 +404,6 @@ function drawAnimation(type) {
 }
 
 function drawTrojanShip(svg) {
-    // Sea waves
     const wave = document.createElementNS("http://www.w3.org/2000/svg", "path");
     wave.setAttribute("d", "M0,200 Q50,150 100,200 T200,200 T300,200");
     wave.setAttribute("stroke", "#0099cc");
@@ -269,7 +411,6 @@ function drawTrojanShip(svg) {
     wave.setAttribute("fill", "none");
     svg.appendChild(wave);
     
-    // Ship
     const ship = document.createElementNS("http://www.w3.org/2000/svg", "g");
     
     const hull = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
@@ -296,15 +437,12 @@ function drawTrojanShip(svg) {
     ship.appendChild(sail);
     
     svg.appendChild(ship);
-    
-    // Animate ship
     animateElement(ship, "translateX", 0, 200, 3);
 }
 
 function drawCyclops(svg) {
     const cyclops = document.createElementNS("http://www.w3.org/2000/svg", "g");
     
-    // Body
     const body = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     body.setAttribute("cx", "300");
     body.setAttribute("cy", "200");
@@ -312,7 +450,6 @@ function drawCyclops(svg) {
     body.setAttribute("fill", "#666");
     cyclops.appendChild(body);
     
-    // Eye
     const eye = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     eye.setAttribute("cx", "300");
     eye.setAttribute("cy", "180");
@@ -327,7 +464,6 @@ function drawCyclops(svg) {
     pupil.setAttribute("fill", "#000");
     cyclops.appendChild(pupil);
     
-    // Mouth
     const mouth = document.createElementNS("http://www.w3.org/2000/svg", "path");
     mouth.setAttribute("d", "M280,230 Q300,250 320,230");
     mouth.setAttribute("stroke", "#000");
@@ -336,21 +472,17 @@ function drawCyclops(svg) {
     cyclops.appendChild(mouth);
     
     svg.appendChild(cyclops);
-    
-    // Animate eye blinking (getting blind)
     animateElement(eye, "opacity", 1, 0, 2);
 }
 
 function drawCirce(svg) {
     const circe = document.createElementNS("http://www.w3.org/2000/svg", "g");
     
-    // Dress
     const dress = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
     dress.setAttribute("points", "250,150 200,300 300,300");
     dress.setAttribute("fill", "#ff69b4");
     circe.appendChild(dress);
     
-    // Head
     const head = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     head.setAttribute("cx", "250");
     head.setAttribute("cy", "120");
@@ -358,7 +490,6 @@ function drawCirce(svg) {
     head.setAttribute("fill", "#f4a460");
     circe.appendChild(head);
     
-    // Hair
     const hair = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     hair.setAttribute("cx", "250");
     hair.setAttribute("cy", "100");
@@ -366,7 +497,6 @@ function drawCirce(svg) {
     hair.setAttribute("fill", "#d2691e");
     circe.appendChild(hair);
     
-    // Magic wand
     const wand = document.createElementNS("http://www.w3.org/2000/svg", "line");
     wand.setAttribute("x1", "280");
     wand.setAttribute("y1", "160");
@@ -376,7 +506,6 @@ function drawCirce(svg) {
     wand.setAttribute("stroke-width", "4");
     circe.appendChild(wand);
     
-    // Magic sparks
     for (let i = 0; i < 5; i++) {
         const spark = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         spark.setAttribute("cx", 380 + Math.random() * 40);
@@ -390,20 +519,18 @@ function drawCirce(svg) {
 }
 
 function drawUnderworld(svg) {
-    // Underground
     const ground = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     ground.setAttribute("width", "500");
     ground.setAttribute("height", "500");
     ground.setAttribute("fill", "#1a1a1a");
     svg.appendChild(ground);
     
-    // Ghosts
     for (let i = 0; i < 3; i++) {
         const ghost = document.createElementNS("http://www.w3.org/2000/svg", "g");
         
         const body = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         body.setAttribute("cx", 100 + i * 150);
-        body.setAttribute("cy", 150);
+        body.setAttribute("cy", "150");
         body.setAttribute("r", "30");
         body.setAttribute("fill", "#ffffff");
         body.setAttribute("opacity", "0.7");
@@ -428,7 +555,6 @@ function drawUnderworld(svg) {
 }
 
 function drawHomecoming(svg) {
-    // House
     const house = document.createElementNS("http://www.w3.org/2000/svg", "g");
     
     const walls = document.createElementNS("http://www.w3.org/2000/svg", "rect");
@@ -462,7 +588,6 @@ function drawHomecoming(svg) {
     
     svg.appendChild(house);
     
-    // Flag waving
     const flag = document.createElementNS("http://www.w3.org/2000/svg", "g");
     const flagPole = document.createElementNS("http://www.w3.org/2000/svg", "line");
     flagPole.setAttribute("x1", "350");
@@ -481,10 +606,11 @@ function drawHomecoming(svg) {
     svg.appendChild(flag);
 }
 
-// Display Questions
+// Display Questions with Scoring
 function displayQuestions(questions, roomNumber) {
     const container = document.getElementById("questionsContainer");
     container.innerHTML = "";
+    gameState.totalQuestions += questions.length;
     
     questions.forEach((question, index) => {
         const questionEl = document.createElement("div");
@@ -495,8 +621,8 @@ function displayQuestions(questions, roomNumber) {
         if (question.type === "trueFalse") {
             questionHTML += `
                 <div class="true-false-options">
-                    <button class="option-btn" onclick="checkTrueFalse(${roomNumber}, ${index}, true, '${question.explanation}')">✅ Σωστό</button>
-                    <button class="option-btn" onclick="checkTrueFalse(${roomNumber}, ${index}, false, '${question.explanation}')">❌ Λάθος</button>
+                    <button class="option-btn" onclick="checkTrueFalse(${roomNumber}, ${index}, true, '${question.explanation}', '${question.type}')">✅ Σωστό</button>
+                    <button class="option-btn" onclick="checkTrueFalse(${roomNumber}, ${index}, false, '${question.explanation}', '${question.type}')">❌ Λάθος</button>
                 </div>
             `;
         } else if (question.type === "matching") {
@@ -512,7 +638,7 @@ function displayQuestions(questions, roomNumber) {
         } else if (question.type === "anagram") {
             questionHTML += `
                 <p style="font-size: 1.3em; font-weight: bold; color: #667eea; margin: 15px 0;">${question.question.split(": ")[1]}</p>
-                <input type="text" class="anagram-answer-input" placeholder="Γράψε την απάντηση εδώ..." onkeypress="if(event.key==='Enter') checkAnagram(${roomNumber}, ${index}, this.value, '${question.answer}', '${question.hint}')">
+                <input type="text" class="anagram-answer-input" placeholder="Γράψε την απάντηση εδώ..." onkeypress="if(event.key==='Enter') checkAnagram(${roomNumber}, ${index}, this.value, '${question.answer}', '${question.hint}', '${question.type}')">
                 <small style="color: #999; margin-top: 5px;">💡 Υπόδειξη: ${question.hint}</small>
             `;
         }
@@ -520,10 +646,16 @@ function displayQuestions(questions, roomNumber) {
         questionEl.innerHTML = questionHTML;
         container.appendChild(questionEl);
     });
+    
+    // Display score
+    const scoreDisplay = document.createElement('div');
+    scoreDisplay.className = 'score-display';
+    scoreDisplay.innerHTML = `<h3>💎 Βαθμολογία: ${gameState.score}</h3>`;
+    container.parentElement.insertBefore(scoreDisplay, container);
 }
 
-// Check True/False Answer
-function checkTrueFalse(roomNumber, questionIndex, selectedAnswer, explanation) {
+// Check True/False Answer with Scoring
+function checkTrueFalse(roomNumber, questionIndex, selectedAnswer, explanation, questionType) {
     const questions = roomsData[roomNumber - 1].questions;
     const correct = questions[questionIndex].answer === selectedAnswer;
     
@@ -531,38 +663,58 @@ function checkTrueFalse(roomNumber, questionIndex, selectedAnswer, explanation) 
     buttons.forEach(btn => btn.disabled = true);
     
     const correctBtn = document.querySelector(`.true-false-options button:nth-child(${selectedAnswer ? 1 : 2})`);
+    
     if (correct) {
+        const points = ScoreCalculator.calculatePoints(true, questionType, gameState.difficulty);
+        gameState.score += points;
+        gameState.correctAnswers++;
         correctBtn.classList.add("correct");
-        showAthenaMessage("Πολύ σωστά! " + explanation);
+        audioManager.playSound('correct');
+        showAthenaMessage("🎉 Πολύ σωστά! +" + points + " πόντοι! " + explanation);
         recordAnswer(roomNumber, questionIndex, true);
     } else {
         correctBtn.classList.add("incorrect");
-        showAthenaMessage("Δυστυχώς λάθος! " + explanation);
+        audioManager.playSound('wrong');
+        showAthenaMessage("❌ Δυστυχώς λάθος! " + explanation);
         recordAnswer(roomNumber, questionIndex, false);
     }
     
+    updateScoreDisplay();
     setTimeout(checkRoomCompletion, 2000);
 }
 
-// Check Anagram Answer
-function checkAnagram(roomNumber, questionIndex, userAnswer, correctAnswer, hint) {
+// Check Anagram Answer with Scoring
+function checkAnagram(roomNumber, questionIndex, userAnswer, correctAnswer, hint, questionType) {
     const correct = userAnswer.toLowerCase().trim() === correctAnswer.toLowerCase();
     const input = document.querySelector(".anagram-answer-input");
     input.disabled = true;
     
     if (correct) {
+        const points = ScoreCalculator.calculatePoints(true, questionType, gameState.difficulty);
+        gameState.score += points;
+        gameState.correctAnswers++;
         input.style.borderColor = "#4caf50";
         input.style.backgroundColor = "#e8f5e9";
-        showAthenaMessage("Σωστό! Έβρες τη σωστή λέξη!");
+        audioManager.playSound('correct');
+        showAthenaMessage("🎉 Σωστό! Έβρες τη σωστή λέξη! +" + points + " πόντοι!");
         recordAnswer(roomNumber, questionIndex, true);
     } else {
         input.style.borderColor = "#f44336";
         input.style.backgroundColor = "#ffebee";
-        showAthenaMessage("Δυστυχώς λάθος! Δοκίμασε ξανά. Υπόδειξη: " + hint);
+        audioManager.playSound('wrong');
+        showAthenaMessage("❌ Δυστυχώς λάθος! Δοκίμασε ξανά. Υπόδειξη: " + hint);
         recordAnswer(roomNumber, questionIndex, false);
     }
     
+    updateScoreDisplay();
     setTimeout(checkRoomCompletion, 2000);
+}
+
+function updateScoreDisplay() {
+    const scoreDisplay = document.querySelector('.score-display h3');
+    if (scoreDisplay) {
+        scoreDisplay.textContent = `💎 Βαθμολογία: ${gameState.score}`;
+    }
 }
 
 // Select Match
@@ -617,12 +769,12 @@ function completeRoom() {
         gameState.collectedClues.push(roomsData[roomNumber - 1].clue);
     }
     
-    // Show clue
     const clueDisplay = document.getElementById("clueDisplay");
     document.getElementById("clueText").textContent = roomsData[roomNumber - 1].clue;
     clueDisplay.classList.remove("hidden");
     
-    // Unlock next room
+    audioManager.playSound('complete');
+    
     if (roomNumber < 5) {
         const nextRoomCard = document.getElementById(`room-${roomNumber + 1}-card`);
         if (nextRoomCard) {
@@ -630,7 +782,6 @@ function completeRoom() {
             nextRoomCard.querySelector(".status").textContent = "🔓 Διαθέσιμο";
         }
     } else {
-        // All rooms completed, show final puzzle
         setTimeout(() => {
             hideSection("roomContentSection");
             showFinalPuzzle();
@@ -643,6 +794,8 @@ function completeRoom() {
 // Show Final Puzzle
 function showFinalPuzzle() {
     showSection("finalPuzzleSection");
+    
+    document.getElementById("finalQuestion").textContent = finalPuzzle.question;
     
     const collectedCluesDiv = document.getElementById("collectedClues");
     collectedCluesDiv.innerHTML = "";
@@ -668,15 +821,32 @@ function submitFinalAnswer() {
         resultMessage.textContent = "✅ Σωστό! Έβρες την απάντηση! Ο Οδυσσέας έκανε δέκα χρόνια για να επιστρέψει!";
         resultMessage.classList.remove("hidden");
         
+        gameState.score += 50; // Bonus for final puzzle
+        
         setTimeout(() => {
             hideSection("finalPuzzleSection");
+            ScoreCalculator.updateLeaderboard(gameState.playerName, gameState.score);
             showSection("completionSection");
+            displayFinalStats();
         }, 2000);
     } else {
         resultMessage.className = "error";
         resultMessage.textContent = "❌ Λάθος! Προσπάθησε ξανά. Σκέψου πόσα χρόνια κράτησε η περιπέτεια...";
         resultMessage.classList.remove("hidden");
     }
+}
+
+function displayFinalStats() {
+    const statsDiv = document.createElement('div');
+    statsDiv.className = 'final-stats';
+    statsDiv.innerHTML = `
+        <h3>📊 Τελικά Στατιστικά</h3>
+        <p>Παίκτης: <strong>${gameState.playerName}</strong></p>
+        <p>Τελική Βαθμολογία: <strong>${gameState.score} πόντοι</strong></p>
+        <p>Σωστές Απαντήσεις: <strong>${gameState.correctAnswers}/${gameState.totalQuestions}</strong></p>
+        <p>Ποσοστό: <strong>${Math.round((gameState.correctAnswers / gameState.totalQuestions) * 100)}%</strong></p>
+    `;
+    document.querySelector('.completion-content').appendChild(statsDiv);
 }
 
 // Update Progress
@@ -693,6 +863,36 @@ function goBackToRoomSelection() {
 
 function restartGame() {
     location.reload();
+}
+
+function showLeaderboard() {
+    const leaderboardList = gameState.leaderboard.map((entry, index) => 
+        `<div class="leaderboard-entry">${index + 1}. ${entry.name} - ${entry.score} πόντοι (${entry.date})</div>`
+    ).join('');
+    
+    alert('🏆 ΚΑΤΆΤΑΞΗ ΠΑΙΧΝΙΔΙΏΝ 🏆\n\n' + (leaderboardList || 'Δεν υπάρχουν στοιχεία ακόμα'));
+}
+
+function changeLanguage(lang) {
+    currentLanguage = lang;
+    localStorage.setItem('odysseyLanguage', lang);
+    location.reload();
+}
+
+function toggleMusic() {
+    const btn = event.target;
+    if (audioManager.backgroundMusic.paused) {
+        audioManager.playBackground();
+        btn.textContent = '🔊 Μουσική (Ενεργή)';
+    } else {
+        audioManager.stopBackground();
+        btn.textContent = '🔇 Μουσική (Σιωπηλή)';
+    }
+}
+
+function setDifficulty(difficulty) {
+    gameState.difficulty = difficulty;
+    console.log('Δυσκολία ορίστηκε σε: ' + difficulty);
 }
 
 // Show/Hide Sections
@@ -722,12 +922,13 @@ function animateElement(element, property, from, to, duration) {
     animate();
 }
 
-// Play Narration (Text-to-Speech)
+// Play Narration with Text-to-Speech
 function playNarration() {
     const text = document.getElementById("narrationText").textContent;
     if ('speechSynthesis' in window) {
+        speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'el-GR';
+        utterance.lang = currentLanguage === 'el' ? 'el-GR' : 'en-US';
         utterance.rate = 0.9;
         speechSynthesis.speak(utterance);
     }
