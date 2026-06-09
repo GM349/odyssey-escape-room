@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escape Room: Η Οδύσσεια του Ομήρου</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Intro Section -->
+        <div id="introSection" class="section active">
+            <div class="intro-content">
+                <h1>🏛️ Escape Room: Η Οδύσσεια του Ομήρου 🏛️</h1>
+                <p class="subtitle">Βοήθησε τον Οδυσσέα να επιστρέψει στην Ιθάκη!</p>
+                
+                <div class="intro-video">
+                    <video id="introVideo" width="100%" controls>
+                        <source src="videos/intro.mp4" type="video/mp4">
+                        Το βίντεό σας δεν υποστηρίζεται. Χρησιμοποιήστε έναν σύγχρονο browser.
+                    </video>
+                </div>
+                
+                <div class="intro-text">
+                    <p>Καλώς ήρθες στο μαγικό κόσμο της Οδύσσειας! Ο Οδυσσέας και οι συνοδοί του χρειάζονται τη βοήθειά σου για να ξεπεράσουν τις δοκιμασίες που περιμένουν και να επιστρέψουν στην Ιθάκη.</p>
+                    <p>Πρέπει να περάσεις 5 δωμάτια, να απαντήσεις σωστά στις ερωτήσεις και να συγκεντρώσεις τα στοιχεία για τον τελικό γρίφο!</p>
+                </div>
+                
+                <button class="btn btn-primary" onclick="startEscapeRoom()">🚀 Αρχίστε το Escape Room!</button>
+            </div>
+        </div>
+
+        <!-- Room Selection -->
+        <div id="roomSelectionSection" class="section">
+            <div class="room-selection-content">
+                <h2>Επιλέξτε Δωμάτιο</h2>
+                <div class="rooms-grid">
+                    <div class="room-card" onclick="enterRoom(1)" id="room-1-card">
+                        <div class="room-icon">🏛️</div>
+                        <h3>Δωμάτιο 1</h3>
+                        <p>Η Αναχώρηση από την Τροία</p>
+                        <span class="status">🔓 Διαθέσιμο</span>
+                    </div>
+                    <div class="room-card locked" id="room-2-card">
+                        <div class="room-icon">⚡</div>
+                        <h3>Δωμάτιο 2</h3>
+                        <p>Ο Κύκλωπας Πολύφημος</p>
+                        <span class="status">🔒 Κλειδωμένο</span>
+                    </div>
+                    <div class="room-card locked" id="room-3-card">
+                        <div class="room-icon">🌊</div>
+                        <h3>Δωμάτιο 3</h3>
+                        <p>Η Κίρκη και η Μαγεία</p>
+                        <span class="status">🔒 Κλειδωμένο</span>
+                    </div>
+                    <div class="room-card locked" id="room-4-card">
+                        <div class="room-icon">🪦</div>
+                        <h3>Δωμάτιο 4</h3>
+                        <p>Το Κάτω Κόσμο</p>
+                        <span class="status">🔒 Κλειδωμένο</span>
+                    </div>
+                    <div class="room-card locked" id="room-5-card">
+                        <div class="room-icon">🏠</div>
+                        <h3>Δωμάτιο 5</h3>
+                        <p>Η Επιστροφή στην Ιθάκη</p>
+                        <span class="status">🔒 Κλειδωμένο</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Room Content -->
+        <div id="roomContentSection" class="section">
+            <div class="room-header">
+                <button class="btn btn-secondary" onclick="goBackToRoomSelection()">← Πίσω</button>
+                <h2 id="roomTitle"></h2>
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+            </div>
+
+            <div class="room-content">
+                <!-- Narration and Animation -->
+                <div class="narration-section">
+                    <div class="animation-area" id="animationArea">
+                        <svg id="animationSVG" width="100%" height="300" style="background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 100%);"></svg>
+                    </div>
+                    <div class="narration-box">
+                        <p id="narrationText"></p>
+                        <button id="playAudioBtn" class="btn btn-small" onclick="playNarration()">🔊 Ακούστε την Αφήγηση</button>
+                    </div>
+                </div>
+
+                <!-- Questions Section -->
+                <div class="questions-section">
+                    <h3>Ερωτήσεις Εμπέδωσης</h3>
+                    <div id="questionsContainer"></div>
+                </div>
+
+                <!-- Athena Helper -->
+                <div id="athenaHelper" class="athena-helper hidden">
+                    <div class="athena-content">
+                        <div class="athena-image">🏛️✨</div>
+                        <div class="athena-message">
+                            <p id="athenaText"></p>
+                        </div>
+                        <button class="btn btn-small" onclick="closeAthena()">Κλείσε</button>
+                    </div>
+                </div>
+
+                <!-- Clue Display -->
+                <div id="clueDisplay" class="clue-display hidden">
+                    <h4>📜 Στοιχείο για τον Τελικό Γρίφο:</h4>
+                    <p id="clueText"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Final Puzzle -->
+        <div id="finalPuzzleSection" class="section">
+            <div class="final-puzzle-content">
+                <h2>🔐 Ο Τελικός Γρίφος 🔐</h2>
+                <p>Συγκέντρωσες όλα τα στοιχεία! Τώρα χρησιμοποίησέ τα για να λύσεις τον τελικό γρίφο και να ξεφύγεις!</p>
+                
+                <div class="puzzle-clues">
+                    <h3>Τα Στοιχεία σου:</h3>
+                    <div id="collectedClues"></div>
+                </div>
+
+                <div class="final-puzzle-input">
+                    <label for="finalAnswer">Η Απάντηση:</label>
+                    <input type="text" id="finalAnswer" placeholder="Γράψε την απάντηση εδώ...">
+                    <button class="btn btn-primary" onclick="submitFinalAnswer()">✅ Υποβολή</button>
+                </div>
+
+                <div id="finalResultMessage" class="hidden"></div>
+            </div>
+        </div>
+
+        <!-- Completion Screen -->
+        <div id="completionSection" class="section">
+            <div class="completion-content">
+                <h2>🎉 Συγχαρητήρια! 🎉</h2>
+                <div class="athena-victory">
+                    <div class="athena-large">👑✨</div>
+                    <p>Η Αθηνά σε χαιρετίζει!</p>
+                </div>
+                <p class="victory-message">Κατάφερες να βοηθήσεις τον Οδυσσέα να επιστρέψει στην Ιθάκη! Έδειξες μεγάλη γνώση της Οδύσσειας του Ομήρου!</p>
+                <button class="btn btn-primary" onclick="restartGame()">🔄 Παίξε ξανά</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
