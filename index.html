@@ -8,6 +8,25 @@
 </head>
 <body>
     <div class="container">
+        <!-- Control Bar -->
+        <div class="control-bar">
+            <div class="control-group">
+                <button class="btn btn-small" onclick="toggleMusic()" title="Toggle Background Music">🔊 Μουσική</button>
+                <button class="btn btn-small" onclick="showLeaderboard()" title="View Leaderboard">🏆 Κατάταξη</button>
+            </div>
+            <div class="control-group">
+                <select class="difficulty-select" onchange="setDifficulty(this.value)">
+                    <option value="easy">Εύκολο</option>
+                    <option value="normal" selected>Κανονικό</option>
+                    <option value="hard">Δύσκολο</option>
+                </select>
+                <select class="language-select" onchange="changeLanguage(this.value)">
+                    <option value="el" selected>🇬🇷 Ελληνικά</option>
+                    <option value="en">🇬🇧 English</option>
+                </select>
+            </div>
+        </div>
+
         <!-- Intro Section -->
         <div id="introSection" class="section active">
             <div class="intro-content">
@@ -22,7 +41,7 @@
                     <p>Καλώς ήρθες στο μαγικό κόσμο της Οδύσσειας! Ο Οδυσσέας και οι συνοδοί του χρειάζονται τη βοήθειά σου για να ξεπεράσουν τις δοκιμασίες που περιμένουν και να επιστρέψουν στην Ιθάκη.</p>
                     <p>Πρέπει να περάσεις 5 δωμάτια, να απαντήσεις σωστά στις ερωτήσεις και να συγκεντρώσεις τα στοιχεία για τον τελικό γρίφο!</p>
                     <p style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
-                        <strong>💡 Συμβουλή:</strong> Κάθε δωμάτιο έχει ερωτήσεις κατανόησης, λεξιλογίας και γραμματικής. Η Αθηνά θα σε βοηθήσει αν απαντήσεις λάθος!
+                        <strong>💡 Συμβουλή:</strong> Κάθε δωμάτιο έχει ερωτήσεις κατανόησης, λεξιλογίας και γραμματικής. Η Αθηνά θα σε βοηθήσει αν απαντήσεις λά��ος!
                     </p>
                 </div>
                 
