@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Intro Video - Odyssey Escape Room</title>
+</head>
+<body>
+    <h1>Δημιουργία Εισαγωγικού Βίντεο</h1>
+    <p>Αυτό το script δημιουργεί ένα εισαγωγικό βίντεο για το Escape Room της Οδύσσειας.</p>
+    
+    <canvas id="canvas" width="1280" height="720"></canvas>
+    <br><br>
+    <button onclick="generateVideo()">📹 Δημιουργία Βίντεο</button>
+    <button onclick="downloadVideo()">⬇️ Κατέβασμα</button>
+
+    <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+    <script>
+        let gif;
+        let frames = [];
+
+        function generateVideo() {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Initialize GIF encoder
+            gif = new GIF({
+                workers: 2,
+                quality: 10,
+                width: 1280,
+                height: 720,
+                workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
+            });
+
+            // Frames 1-60: Intro Scene (5 seconds at 12fps)
+            for (let f = 0; f < 60; f++) {
+                drawIntroScene(ctx, f);
+                gif.addFrame(canvas, { delay: 83 }); // ~12fps
+            }
+
+            // Frames 60-120: Odysseus and his men sailing
+            for (let f = 60; f < 120; f++) {
+                drawSailingScene(ctx, f - 60);
+                gif.addFrame(canvas, { delay: 83 });
+            }
+
+            // Frames 120-180: Poseidon appears
+            for (let f = 120; f < 180; f++) {
+                drawPoseidonScene(ctx, f - 120);
+                gif.addFrame(canvas, { delay: 83 });
+            }
+
+            // Frames 180-240: Storm
+            for (let f = 180; f < 240; f++) {
+                drawStormScene(ctx, f - 180);
+                gif.addFrame(canvas, { delay: 83 });
+            }
+
+            // Frames 240-300: Adventures ahead
+            for (let f = 240; f < 300; f++) {
+                drawAdventureScene(ctx, f - 240);
+                gif.addFrame(canvas, { delay: 83 });
+            }
+
+            gif.on('finished', function(blob) {
+                const url = URL.createObjectURL(blob);
+                const video = document.createElement('video');
+                video.src = url;
+                video.controls = true;
+                video.width = 640;
+                document.body.appendChild(video);
+                alert('Το βίντεο δημιουργήθηκε! Κάντε κλικ στο κουμπί "Κατέβασμα" για να το αποθηκεύσετε.');
+            });
+
+            gif.render();
+        }
+
+        function drawIntroScene(ctx, frame) {
+            // Background gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, 720);
+            gradient.addColorStop(0, '#1a1a2e');
+            gradient.addColorStop(1, '#16213e');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 1280, 720);
+
+            // Stars
+            ctx.fillStyle = '#ffffff';
+            for (let i = 0; i < 50; i++) {
+                const x = (i * 25.6) % 1280;
+                const y = (i * 14.4) % 720;
+                const size = Math.sin(frame / 10 + i) * 2 + 2;
+                ctx.fillRect(x, y, size, size);
+            }
+
+            // Title with animation
+            const titleOpacity = Math.min(frame / 20, 1);
+            ctx.fillStyle = `rgba(255, 215, 0, ${titleOpacity})`;
+            ctx.font = 'bold 80px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Η Οδύσσεια του Ομήρου', 640, 200);
+
+            // Subtitle
+            ctx.fillStyle = `rgba(255, 255, 255, ${titleOpacity})`;
+            ctx.font = '40px Arial';
+            ctx.fillText('Escape Room Adventure', 640, 280);
+
+            // Animated wave
+            ctx.strokeStyle = `rgba(0, 150, 255, ${titleOpacity})`;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            for (let x = 0; x < 1280; x += 20) {
+                const y = 350 + Math.sin((x + frame * 5) / 100) * 30;
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            // Main text
+            ctx.fillStyle = `rgba(255, 255, 255, ${titleOpacity * 0.8})`;
+            ctx.font = '28px Arial';
+            ctx.fillText('Βοήθησε τον Οδυσσέα να επιστρέψει στην Ιθάκη', 640, 450);
+            ctx.fillText('10 χρόνια περιπέτειας, δοκιμασίες και μαγεία', 640, 510);
+        }
+
+        function drawSailingScene(ctx, frame) {
+            // Sea background
+            const gradient = ctx.createLinearGradient(0, 0, 0, 720);
+            gradient.addColorStop(0, '#87CEEB');
+            gradient.addColorStop(1, '#4a90e2');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 1280, 720);
+
+            // Sun
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(200, 100, 50, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Waves
+            ctx.strokeStyle = '#00a8e8';
+            ctx.lineWidth = 3;
+            for (let i = 0; i < 3; i++) {
+                ctx.beginPath();
+                for (let x = 0; x < 1280; x += 40) {
+                    const y = 400 + i * 60 + Math.sin((x + frame * 10) / 200) * 20;
+                    if (x === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+
+            // Ship
+            const shipX = 200 + frame * 4;
+            drawShip(ctx, shipX, 300);
+
+            // Text
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 40px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Η Αναχώρηση από την Τροία', 640, 150);
+        }
+
+        function drawPoseidonScene(ctx, frame) {
+            // Dark sea
+            const gradient = ctx.createLinearGradient(0, 0, 0, 720);
+            gradient.addColorStop(0, '#1a1a2e');
+            gradient.addColorStop(1, '#0f3460');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 1280, 720);
+
+            // Lightning
+            if (frame % 10 < 3) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.fillRect(0, 0, 1280, 720);
+            }
+
+            // Angry waves
+            ctx.strokeStyle = '#0099cc';
+            ctx.lineWidth = 5;
+            for (let i = 0; i < 4; i++) {
+                ctx.beginPath();
+                for (let x = 0; x < 1280; x += 30) {
+                    const y = 300 + i * 80 + Math.sin((x + frame * 15) / 150) * 40;
+                    if (x === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+
+            // Poseidon's trident (lightning bolt effect)
+            const tridentX = 400 + Math.sin(frame / 5) * 100;
+            drawTrident(ctx, tridentX, 150);
+
+            // Text
+            ctx.fillStyle = '#ff4444';
+            ctx.font = 'bold 50px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Ο Ποσειδώνας Θυμώνει!', 640, 100);
+        }
+
+        function drawStormScene(ctx, frame) {
+            // Storm sky
+            const gradient = ctx.createLinearGradient(0, 0, 0, 720);
+            gradient.addColorStop(0, '#2c3e50');
+            gradient.addColorStop(1, '#34495e');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 1280, 720);
+
+            // Rain
+            ctx.strokeStyle = `rgba(200, 200, 255, 0.6)`;
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 100; i++) {
+                const x = Math.sin(frame / 5 + i) * 200 + 640;
+                const y = (frame * 20 + i * 40) % 720;
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x - 20, y + 30);
+                ctx.stroke();
+            }
+
+            // Storm clouds
+            ctx.fillStyle = 'rgba(100, 100, 100, 0.7)';
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.arc(200 + i * 250, 100 + Math.sin(frame / 10 + i) * 50, 100, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Ship being tossed
+            const shipX = 640 + Math.sin(frame / 3) * 150;
+            const shipY = 400 + Math.cos(frame / 2) * 80;
+            ctx.save();
+            ctx.translate(shipX, shipY);
+            ctx.rotate(Math.sin(frame / 3) * 0.3);
+            drawShip(ctx, 0, 0);
+            ctx.restore();
+
+            // Text
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 50px Arial';
+            ctx.textAlign = 'center';
+            ctx.shadowColor = '#ff0000';
+            ctx.shadowBlur = 20;
+            ctx.fillText('Δοκιμασίες Περιμένουν...', 640, 150);
+        }
+
+        function drawAdventureScene(ctx, frame) {
+            // Adventure background
+            const gradient = ctx.createLinearGradient(0, 0, 0, 720);
+            gradient.addColorStop(0, '#667eea');
+            gradient.addColorStop(1, '#764ba2');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 1280, 720);
+
+            // Stars
+            ctx.fillStyle = `rgba(255, 215, 0, ${0.3 + Math.sin(frame / 10) * 0.2})`;
+            for (let i = 0; i < 100; i++) {
+                const x = (i * 12.8) % 1280;
+                const y = (i * 7.2) % 720;
+                const size = Math.sin(frame / 8 + i) * 3 + 3;
+                ctx.fillRect(x, y, size, size);
+            }
+
+            // Adventure icons
+            const icons = ['🏛️', '⚡', '🌊', '🪦', '🏠'];
+            for (let i = 0; i < 5; i++) {
+                const x = 200 + i * 200;
+                const y = 300 + Math.sin(frame / 5 + i) * 50;
+                ctx.font = `${60 + Math.sin(frame / 10 + i) * 20}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.fillText(icons[i], x, y);
+            }
+
+            // Main text
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 50px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('5 Δωμάτια Γεμάτα Μυστήρια!', 640, 150);
+
+            // Subtitle
+            ctx.font = '28px Arial';
+            ctx.fillStyle = '#fff9e6';
+            ctx.fillText('Ερωτήσεις • Λεξιλόγιο • Γραμματική', 640, 650);
+        }
+
+        function drawShip(ctx, x, y) {
+            ctx.save();
+            ctx.translate(x, y);
+
+            // Hull
+            ctx.fillStyle = '#8B4513';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 80, 40, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Mast
+            ctx.strokeStyle = '#654321';
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(0, -40);
+            ctx.lineTo(0, -120);
+            ctx.stroke();
+
+            // Sail
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.beginPath();
+            ctx.moveTo(0, -40);
+            ctx.lineTo(80, -20);
+            ctx.lineTo(0, 40);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function drawTrident(ctx, x, y) {
+            ctx.strokeStyle = '#ffff00';
+            ctx.lineWidth = 8;
+
+            // Main shaft
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x, y + 150);
+            ctx.stroke();
+
+            // Left prong
+            ctx.beginPath();
+            ctx.moveTo(x, y + 100);
+            ctx.lineTo(x - 60, y + 150);
+            ctx.stroke();
+
+            // Right prong
+            ctx.beginPath();
+            ctx.moveTo(x, y + 100);
+            ctx.lineTo(x + 60, y + 150);
+            ctx.stroke();
+
+            // Center prong
+            ctx.beginPath();
+            ctx.moveTo(x, y + 100);
+            ctx.lineTo(x, y + 160);
+            ctx.stroke();
+        }
+
+        function downloadVideo() {
+            alert('Κάντε δεξί κλικ στο βίντεο και επιλέξτε "Save video as..." για να το κατεβάσετε.');
+        }
+
+        // Auto-generate on load
+        window.onload = function() {
+            generateVideo();
+        };
+    </script>
+</body>
+</html>
